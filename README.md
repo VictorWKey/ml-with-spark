@@ -4,9 +4,60 @@ Este proyecto demuestra la diferencia entre un modelo con **data leakage** (R²=
 
 ---
 
+## 🚀 Inicio Rápido
+
+Los archivos del proyecto están en la carpeta `ml-prediction/`. **IMPORTANTE:** Debes ejecutar los modelos desde dentro de esa carpeta:
+
+```bash
+# Cambiar al directorio del proyecto
+cd ml-prediction
+
+# Luego ejecutar los comandos de Spark como se indica abajo
+```
+
+**Nota:** Los archivos Scala buscan los datos en `../IMDB-Movies-Extensive-Dataset-Analysis/data1/`, por lo que es fundamental ejecutarlos desde la carpeta `ml-prediction/`.
+
+---
+
+## 📊 Preparación de Datos
+
+Antes de ejecutar los modelos, necesitas descargar el dataset. Este proyecto utiliza el **IMDB Movies Extensive Dataset**:
+
+### Opción 1: Clonar el repositorio completo
+```bash
+# Desde la raíz del proyecto
+git clone https://github.com/datasciencedojo/datasets.git IMDB-Movies-Extensive-Dataset-Analysis
+```
+
+### Opción 2: Descargar manualmente
+1. Ve a: https://github.com/datasciencedojo/datasets
+2. Navega a la carpeta `raw/IMDb Movies Extensive Dataset`
+3. Descarga los archivos:
+   - `IMDb movies.csv`
+   - `IMDb ratings.csv`
+4. Crea la estructura de carpetas: `IMDB-Movies-Extensive-Dataset-Analysis/data1/`
+5. Coloca los archivos CSV en esa carpeta
+
+### Verificación
+Después de descargar, verifica que tengas esta estructura:
+```
+[raíz del proyecto]/
+├── IMDB-Movies-Extensive-Dataset-Analysis/
+│   └── data1/
+│       ├── IMDb movies.csv
+│       └── IMDb ratings.csv
+├── ml-prediction/
+│   ├── IMDBPredictionModelWithDataLeakage.scala   # ❌ Modelo CON cheating
+│   ├── IMDBPredictionModelClean.scala         # ✅ Modelo SIN cheating
+│   └── resultados/                           # 📊 Outputs de ambos modelos
+└── README.md (este archivo)
+```
+
+---
+
 ## ⚠️ MODELO CON CHEATING (Data Leakage)
 
-**Archivo:** `IMDBPredictionModelSimplified.scala`
+**Archivo:** `IMDBPredictionModelWithDataLeakage.scala`
 
 ### ¿Cómo ejecutar?
 ```bash
@@ -17,8 +68,8 @@ spark-shell \
   --conf spark.sql.shuffle.partitions=100
 
 # Cargar y ejecutar modelo
-:load IMDBPredictionModelSimplified.scala
-IMDBPredictionModelSimplified.main(Array())
+:load IMDBPredictionModelWithDataLeakage.scala
+IMDBPredictionModelWithDataLeakage.main(Array())
 ```
 
 ### Resultados (CON CHEATING)
@@ -47,7 +98,7 @@ val actorAvgRating = movieData.groupBy("actor").agg(avg("avg_vote"))
 
 ## ✅ MODELO LIMPIO (Sin Data Leakage)
 
-**Archivo:** `IMDBPredictionModelREAL.scala`
+**Archivo:** `IMDBPredictionModelClean.scala`
 
 ### ¿Cómo ejecutar?
 ```bash
@@ -58,8 +109,8 @@ spark-shell \
   --conf spark.sql.shuffle.partitions=100
 
 # Cargar y ejecutar modelo limpio
-:load IMDBPredictionModelREAL.scala
-IMDBPredictionModelREAL.main(Array())
+:load IMDBPredictionModelClean.scala
+IMDBPredictionModelClean.main(Array())
 ```
 
 ### Resultados (SIN CHEATING)
@@ -108,7 +159,7 @@ actors_freq = count / totalMovies  // No usa target
 - ⚠️ Síntoma: R² "demasiado bueno", feature importance desequilibrada
 
 **Alternativas válidas a Target Encoding:**
-1. **Frequency Encoding** - Cuenta apariciones (usado en REAL)
+1. **Frequency Encoding** - Cuenta apariciones (usado en Clean)
 2. **Leave-One-Out Encoding** - Excluye fila actual del cálculo
 3. **K-Fold Target Encoding** - Usa cross-validation para evitar leakage
 
@@ -117,14 +168,15 @@ actors_freq = count / totalMovies  // No usa target
 ## 📁 Archivos del Proyecto
 
 ```
-ml_prediction/
-├── README.md                             # � Este archivo
-├── IMDBPredictionModelSimplified.scala   # ❌ Modelo CON cheating (R²=0.86)
-├── IMDBPredictionModelREAL.scala         # ✅ Modelo SIN cheating (R²=0.24)
+ml-prediction/
+├── IMDBPredictionModelWithDataLeakage.scala   # ❌ Modelo CON cheating (R²=0.86)
+├── IMDBPredictionModelClean.scala         # ✅ Modelo SIN cheating (R²=0.24)
 └── resultados/                           # 📊 Outputs de ambos modelos
-    ├── simplified_*_predictions.txt      # Resultados modelo Simplified
-    └── real_*_predictions.txt            # Resultados modelo REAL
+    ├── with_data_leakage_*_predictions.txt      # Resultados modelo WithDataLeakage
+    └── clean_*_predictions.txt            # Resultados modelo Clean
 ```
+
+README.md (este archivo) está en la raíz del proyecto.
 
 ---
 

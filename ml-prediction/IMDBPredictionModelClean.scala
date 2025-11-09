@@ -8,10 +8,10 @@ import org.apache.spark.ml.{Pipeline, PipelineModel}
 import org.apache.spark.storage.StorageLevel
 import java.io.PrintWriter
 
-// :load ml_prediction/IMDBPredictionModelREAL.scala
-// IMDBPredictionModelREAL.main(Array())
+// :load ml_prediction/IMDBPredictionModelClean.scala
+// IMDBPredictionModelClean.main(Array())
 
-object IMDBPredictionModelREAL {
+object IMDBPredictionModelClean {
   
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
@@ -43,8 +43,8 @@ object IMDBPredictionModelREAL {
     println("=" * 80)
     println()
     
-    val moviesPath = "IMDB-Movies-Extensive-Dataset-Analysis/data1/IMDb movies.csv"
-    val ratingsPath = "IMDB-Movies-Extensive-Dataset-Analysis/data1/IMDb ratings.csv"
+    val moviesPath = "../IMDB-Movies-Extensive-Dataset-Analysis/data1/IMDb movies.csv"
+    val ratingsPath = "../IMDB-Movies-Extensive-Dataset-Analysis/data1/IMDb ratings.csv"
     
     println("📊 PASO 1: Cargando y preparando datos...")
     val fullDF = cargarYJoinearDatos(spark, moviesPath, ratingsPath)
@@ -468,7 +468,7 @@ object IMDBPredictionModelREAL {
   }
   
   def generarReporteComparativo(modelos: Map[String, (Map[String, Double], Double)]): Unit = {
-    val outputPath = "ml_prediction/resultados/reporte_real.txt"
+    val outputPath = "resultados/reporte_clean.txt"
     val writer = new PrintWriter(outputPath)
     
     writer.println("=" * 80)

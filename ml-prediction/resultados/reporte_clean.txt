@@ -1,0 +1,46 @@
+================================================================================
+🎯 REPORTE - MODELO REAL (SIN TARGET ENCODING)
+================================================================================
+
+CAMBIOS RESPECTO AL MODELO ANTERIOR:
+--------------------------------------------------------------------------------
+❌ ELIMINADO: Target Encoding (director_encoded, actors_encoded)
+✅ AGREGADO:  Frequency Encoding (director_freq, actors_freq)
+
+RAZÓN DEL CAMBIO:
+  El modelo anterior tenía R² = 0.86 con:
+  - actors_encoded: 74% de feature importance
+  - director_encoded: 11% de feature importance
+  → Target Encoding creaba correlación casi perfecta con el target
+  → Era data leakage indirecto (usaba promedio del target)
+
+FEATURES UTILIZADAS:
+--------------------------------------------------------------------------------
+  • Description: TF-IDF (100 features)
+  • Genre: Feature Hashing (16 features)
+  • Director: Frequency Encoding (1 feature) ✅ SIN target
+  • Actors: Frequency Encoding (1 feature) ✅ SIN target
+  • Duration: Numérica + Categórica (2 features)
+  • Year: Numérica + Derivadas (4 features)
+  • TOTAL: ~124 features
+
+RESULTADOS:
+================================================================================
+Modelo                              RMSE       MAE        R²         Tiempo         
+--------------------------------------------------------------------------------
+Gradient Boosted Trees              1.0586     0.8128     0.2451     0.92 min       
+Random Forest                       1.0617     0.8152     0.2407     0.18 min       
+Ridge Regression                    1.0901     0.8437     0.1995     0.05 min       
+================================================================================
+
+INTERPRETACIÓN:
+--------------------------------------------------------------------------------
+🏆 Mejor modelo: Gradient Boosted Trees
+   - R²: 0.2451
+
+✅ R² REALISTA (< 0.4)
+   → Predice ratings usando SOLO características intrínsecas
+   → NO hay data leakage de ningún tipo
+   → Este es el verdadero poder predictivo del modelo
+
+================================================================================

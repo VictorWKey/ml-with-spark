@@ -8,10 +8,10 @@ import org.apache.spark.ml.{Pipeline, PipelineModel}
 import org.apache.spark.storage.StorageLevel
 import java.io.PrintWriter
 
-// :load ml_prediction/IMDBPredictionModelSimplified.scala
-// IMDBPredictionModelSimplified.main(Array())
+// :load ml_prediction/IMDBPredictionModelWithDataLeakage.scala
+// IMDBPredictionModelWithDataLeakage.main(Array())
 
-object IMDBPredictionModelSimplified {
+object IMDBPredictionModelWithDataLeakage {
   
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
@@ -32,8 +32,8 @@ object IMDBPredictionModelSimplified {
     println("=" * 80)
     println()
     
-    val moviesPath = "IMDB-Movies-Extensive-Dataset-Analysis/data1/IMDb movies.csv"
-    val ratingsPath = "IMDB-Movies-Extensive-Dataset-Analysis/data1/IMDb ratings.csv"
+    val moviesPath = "../IMDB-Movies-Extensive-Dataset-Analysis/data1/IMDb movies.csv"
+    val ratingsPath = "../IMDB-Movies-Extensive-Dataset-Analysis/data1/IMDb ratings.csv"
     
     println("📊 PASO 1: Cargando y preparando datos...")
     val fullDF = cargarYJoinearDatos(spark, moviesPath, ratingsPath)
@@ -71,7 +71,7 @@ object IMDBPredictionModelSimplified {
     guardarPredicciones(
       baselineModel, 
       testOptimized, 
-      "ml_prediction/resultados/simplified_baseline_predictions.txt"
+      "resultados/with_data_leakage_baseline_predictions.txt"
     )
     
     // ============================================================================
@@ -86,7 +86,7 @@ object IMDBPredictionModelSimplified {
     guardarPredicciones(
       rfModel, 
       testOptimized, 
-      "ml_prediction/resultados/simplified_rf_predictions.txt"
+      "resultados/with_data_leakage_rf_predictions.txt"
     )
     
     // ============================================================================
@@ -101,7 +101,7 @@ object IMDBPredictionModelSimplified {
     guardarPredicciones(
       gbtModel, 
       testOptimized, 
-      "ml_prediction/resultados/simplified_gbt_predictions.txt"
+      "resultados/with_data_leakage_gbt_predictions.txt"
     )
     
     // ============================================================================
@@ -130,7 +130,7 @@ object IMDBPredictionModelSimplified {
     testOptimized.unpersist()
     
     println("\n" + "=" * 80)
-    println("✅ PROCESO COMPLETADO - Resultados en ml_prediction/resultados/")
+    println("✅ PROCESO COMPLETADO - Resultados en resultados/")
     println("=" * 80)
     
     spark.stop()
@@ -521,7 +521,7 @@ object IMDBPredictionModelSimplified {
     
     guardarPredicciones(
       ensemble.select("avg_vote", "prediction"),
-      "ml_prediction/resultados/simplified_ensemble_predictions.txt"
+      "resultados/with_data_leakage_ensemble_predictions.txt"
     )
     
     evaluarModelo(ensemble)
@@ -610,7 +610,7 @@ object IMDBPredictionModelSimplified {
   }
   
   def generarReporteComparativo(modelos: Map[String, (Map[String, Double], Double)]): Unit = {
-    val outputPath = "ml_prediction/resultados/reporte_simplificado.txt"
+    val outputPath = "resultados/reporte_with_data_leakage.txt"
     val writer = new PrintWriter(outputPath)
     
     writer.println("=" * 80)

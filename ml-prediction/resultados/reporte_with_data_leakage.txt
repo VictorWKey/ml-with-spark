@@ -1,0 +1,52 @@
+================================================================================
+REPORTE COMPARATIVO - MODELOS DE PREDICCIÓN IMDB
+================================================================================
+
+CONFIGURACIÓN:
+--------------------------------------------------------------------------------
+• Features de Texto:
+  - Description: TF-IDF Unigrams (100 features)
+• Features Categóricas:
+  - Genre: Feature Hashing (16 features) - Top 30 categorías
+  - Director: Target Encoding (1 feature)
+  - Actors: Target Encoding (1 feature)
+  - Duration Category: StringIndexer (1 feature)
+• Features Numéricas (11 features):
+  - duration, votes, log_votes, reviews_from_users, reviews_from_critics
+  - year_clean, decade, votes_per_review, review_ratio
+  - is_recent, is_old_classic
+• TOTAL: ~130 features (Optimizado para memoria)
+• Normalización: StandardScaler
+• Random Forest: 30 árboles, profundidad 8, subsample 0.8
+• GBT: 50 iteraciones, profundidad 5, subsample 0.8
+
+RESULTADOS:
+================================================================================
+Modelo                              RMSE       MAE        R²         Tiempo         
+--------------------------------------------------------------------------------
+Gradient Boosted Trees              0.4218     0.1977     0.8815     0.89 min       
+Ensemble                            0.4353     0.2135     0.8738     N/A            
+Random Forest                       0.4696     0.2530     0.8531     0.23 min       
+Ridge Regression                    0.5287     0.3144     0.8138     0.09 min       
+================================================================================
+
+ANÁLISIS:
+--------------------------------------------------------------------------------
+🏆 Mejor modelo: Gradient Boosted Trees
+   - RMSE: 0.4218
+   - R²: 0.8815
+
+📈 Mejora sobre baseline:
+   - RMSE: 20.23% mejor
+   - R²: 8.32% mejor
+
+TÉCNICAS APLICADAS:
+--------------------------------------------------------------------------------
+✅ Target Encoding (director, actors) - Evita alta cardinalidad
+✅ Feature Hashing (genre) - Memoria controlada
+✅ Feature Engineering - 11 features derivadas
+✅ TF-IDF - Captura semántica del texto
+✅ StandardScaler - Normalización de features
+✅ Ensemble - Combina fortalezas de múltiples modelos
+
+================================================================================
