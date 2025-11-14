@@ -1,10 +1,18 @@
 # 🎬 Análisis Exploratorio de Datos (EDA) del Dataset IMDb
+## Descripción del Dataset 
+
+Este dataset recopila información estructurada de películas registradas en la base de datos de IMDb. Está diseñado para análisis estadísticos, exploratorios y de minería de datos sobre la industria cinematográfica. Cada fila representa una película única, y cada columna aporta un aspecto específico de esa producción (título, año, país, género, presupuesto, calificaciones, etc.).
+
+El dataset combina datos numéricos, categóricos, fechas, texto libre y metadatos técnicos, lo que permite un análisis amplio: tendencias por año, géneros dominantes, relación entre presupuesto e ingresos, correlaciones entre votos y calificaciones, análisis de países, directores y productoras, entre otros.
 
 ---
 
 ## 0. Carga de Datos y Preprocesamiento Inicial
+- Archivos cargados:
+  - 'IMDb movies.csv'
+  - 'IMDb ratings.csv'
 
-- Archivos cargados: Películas (85855 filas), Ratings (85855 filas).
+- Películas (85855 filas), Ratings (85855 filas).
 
 - **Datasets unidos**. Total de filas: **85855**, Total de columnas: **70**.
 
@@ -12,7 +20,7 @@
 
 ### Tipos de Datos y Clasificación de Variables:
 
-| Columna                   | Tipo de Dato   |
+| Columnas                  | Tipos de Dato  |
 |:--------------------------|:---------------|
 | votes_2                   | int64          |
 | votes_10                  | int64          |
@@ -115,13 +123,7 @@
 
 - **duration**: Mínimo=41, Máximo=808.
 
-- **budget**: No se pudo calcular min/max (posibles NaN).
-
-- **worlwide_gross_income**: No se pudo calcular min/max (posibles NaN).
-
 - **votes**: Mínimo=99, Máximo=2,278,845.
-
-Gráfico guardado: `duration_boxplot.png`
 
 **Visualización de Outliers en Duración:**
 ![Box Plot de Duración](duration_boxplot.png)
@@ -139,8 +141,6 @@ Gráfico guardado: `duration_boxplot.png`
 | metascore | 13305   | 55.9    | 17.78   | 1     | 43    | 57    | 69     | 84      | 93     | 100         | -0.16       | -0.43      |
 
 ## 4. Análisis de la Variable Objetivo: avg_vote
-
-Gráfico guardado: `avg_vote_distribution.png`
 
 - **Media del Rating:** 5.90
 
@@ -161,14 +161,10 @@ Gráfico guardado: `avg_vote_distribution.png`
 
 ## 6. Distribuciones Importantes
 
-Gráfico guardado: `avg_vote_by_year.png`
-
 **Rating Promedio por Año:**
 ![Rating Promedio por Año](avg_vote_by_year.png)
 
 ## 7. Análisis de Duración vs Rating
-
-Gráfico guardado: `duration_vs_rating_boxplot.png`
 
 **Box Plot de Duración vs Rating:**
 ![Duración vs Rating](duration_vs_rating_boxplot.png)
@@ -183,9 +179,3 @@ Gráfico guardado: `duration_vs_rating_boxplot.png`
 | 100-120min     | 6.176      |
 | <80min         | 5.722      |
 | **80-100min** | **5.601** |
-
-
---- **¡ANÁLISIS EXPLORATORIO DE DATOS (EDA) COMPLETADO!** ---
-
-
-**Revisa el archivo `eda-IMDb.md` y los archivos PNG generados.**
