@@ -26,7 +26,7 @@ Antes de ejecutar los modelos, necesitas descargar el dataset. Este proyecto uti
 ### Opción 1: Clonar el repositorio completo
 ```bash
 # Desde la raíz del proyecto
-git clone https://github.com/datasciencedojo/datasets.git IMDB-Movies-Extensive-Dataset-Analysis
+git clone https://github.com/sahildit/IMDB-Movies-Extensive-Dataset-Analysis.git IMDB-Movies-Extensive-Dataset-Analysis
 ```
 
 ### Opción 2: Descargar manualmente

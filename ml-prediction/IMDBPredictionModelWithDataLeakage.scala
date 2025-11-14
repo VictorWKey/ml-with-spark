@@ -2,7 +2,7 @@ import org.apache.spark.sql.{SparkSession, DataFrame}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
 import org.apache.spark.ml.feature._
-import org.apache.spark.ml.regression.{LinearRegression, RandomForestRegressor, GBTRegressor}
+import org.apache.spark.ml.regression.{LinearRegression, RandomForestRegressor, GBTRegressor, DecisionTreeRegressor, FMRegressor, IsotonicRegression, GeneralizedLinearRegression}
 import org.apache.spark.ml.evaluation.RegressionEvaluator
 import org.apache.spark.ml.{Pipeline, PipelineModel}
 import org.apache.spark.storage.StorageLevel
@@ -32,20 +32,19 @@ object IMDBPredictionModelWithDataLeakage {
     println("=" * 80)
     println()
     
-    val moviesPath = "../IMDB-Movies-Extensive-Dataset-Analysis/data1/IMDb movies.csv"
-    val ratingsPath = "../IMDB-Movies-Extensive-Dataset-Analysis/data1/IMDb ratings.csv"
+    val moviesPath = "./IMDB-Movies-Extensive-Dataset-Analysis/data1/IMDb movies.csv"
+    val ratingsPath = "./IMDB-Movies-Extensive-Dataset-Analysis/data1/IMDb ratings.csv"
     
-    println("📊 PASO 1: Cargando y preparando datos...")
+    println("PASO 1: Cargando y preparando datos...")
     val fullDF = cargarYJoinearDatos(spark, moviesPath, ratingsPath)
     
-    println("\n🧹 PASO 2: Limpiando datos...")
+    println("\nPASO 2: Limpiando datos...")
     val cleanDF = limpiarYEnriquecerDatos(fullDF)
     
-    println("\n🔧 PASO 3: Dividiendo train/test (80/20) ANTES de Feature Engineering...")
-    println("   ⚠️  CRÍTICO: Split ANTES de Target Encoding para evitar data leakage")
+    println("\nPASO 3: Dividiendo train/test (80/20)...")
     val Array(trainDataRaw, testDataRaw) = cleanDF.randomSplit(Array(0.8, 0.2), seed = 42)
     
-    println("\n🎯 PASO 4: Aplicando Feature Engineering SOLO en train...")
+    println("\nPASO 4: Aplicando Feature Engineering...")
     val (trainData, testData, encodingMaps) = aplicarFeatureEngineeringConSplit(trainDataRaw, testDataRaw)
     
     val trainOptimized = trainData.repartition(100).persist(StorageLevel.MEMORY_AND_DISK)
@@ -54,16 +53,12 @@ object IMDBPredictionModelWithDataLeakage {
     val trainCount = trainOptimized.count()
     val testCount = testOptimized.count()
     
-    println(s"   ✓ Datos de entrenamiento: $trainCount filas")
-    println(s"   ✓ Datos de prueba: $testCount filas")
-    println(s"   ✓ Encodings calculados solo en train (sin data leakage)")
-    println(s"   ✓ Director encodings: ${encodingMaps("director").size} categorías")
-    println(s"   ✓ Actors encodings: ${encodingMaps("actors").size} categorías")
+    println(s"   Datos de entrenamiento: $trainCount filas")
+    println(s"   Datos de prueba: $testCount filas")
+    println(s"   Director encodings: ${encodingMaps("director").size} categorias")
+    println(s"   Actors encodings: ${encodingMaps("actors").size} categorias")
     
-    // ============================================================================
-    // MODELO 1: Ridge Regression (Baseline)
-    // ============================================================================
-    println("\n📈 PASO 5: Entrenando BASELINE (Ridge Regression)...")
+    println("\nPASO 5: Entrenando Ridge Regression...")
     val (baselineModel, baselineMetrics, baselineTime) = entrenarModeloBaseline(
       trainOptimized, testOptimized
     )
@@ -71,13 +66,10 @@ object IMDBPredictionModelWithDataLeakage {
     guardarPredicciones(
       baselineModel, 
       testOptimized, 
-      "resultados/with_data_leakage_baseline_predictions.txt"
+      "ml-prediction/resultados/with_data_leakage_baseline_predictions.txt"
     )
     
-    // ============================================================================
-    // MODELO 2: Random Forest (Hiperparámetros fijos optimizados)
-    // ============================================================================
-    println("\n🌲 PASO 6: Entrenando Random Forest (hiperparámetros optimizados)...")
+    println("\nPASO 6: Entrenando Random Forest...")
     val (rfModel, rfMetrics, rfTime) = entrenarRandomForest(
       trainOptimized, testOptimized
     )
@@ -86,13 +78,10 @@ object IMDBPredictionModelWithDataLeakage {
     guardarPredicciones(
       rfModel, 
       testOptimized, 
-      "resultados/with_data_leakage_rf_predictions.txt"
+      "ml-prediction/resultados/with_data_leakage_rf_predictions.txt"
     )
     
-    // ============================================================================
-    // MODELO 3: Gradient Boosted Trees (Hiperparámetros fijos optimizados)
-    // ============================================================================
-    println("\n🚀 PASO 7: Entrenando GBT (hiperparámetros optimizados)...")
+    println("\nPASO 7: Entrenando GBT...")
     val (gbtModel, gbtMetrics, gbtTime) = entrenarGBT(
       trainOptimized, testOptimized
     )
@@ -101,27 +90,94 @@ object IMDBPredictionModelWithDataLeakage {
     guardarPredicciones(
       gbtModel, 
       testOptimized, 
-      "resultados/with_data_leakage_gbt_predictions.txt"
+      "ml-prediction/resultados/with_data_leakage_gbt_predictions.txt"
     )
     
-    // ============================================================================
-    // MODELO 4: Ensemble
-    // ============================================================================
-    println("\n🎭 PASO 8: Creando modelo ENSEMBLE...")
+    println("\nPASO 8: Entrenando Decision Tree...")
+    val (dtModel, dtMetrics, dtTime) = entrenarDecisionTree(
+      trainOptimized, testOptimized
+    )
+    imprimirMetricas("Decision Tree", dtMetrics, dtTime)
+    imprimirFeatureImportances(dtModel, "Decision Tree")
+    guardarPredicciones(
+      dtModel, 
+      testOptimized, 
+      "ml-prediction/resultados/with_data_leakage_dt_predictions.txt"
+    )
+    
+    println("\nPASO 9: Entrenando Lasso Regression...")
+    val (lassoModel, lassoMetrics, lassoTime) = entrenarLasso(
+      trainOptimized, testOptimized
+    )
+    imprimirMetricas("Lasso Regression", lassoMetrics, lassoTime)
+    guardarPredicciones(
+      lassoModel, 
+      testOptimized, 
+      "ml-prediction/resultados/with_data_leakage_lasso_predictions.txt"
+    )
+    
+    println("\nPASO 10: Entrenando Elastic Net...")
+    val (elasticNetModel, elasticNetMetrics, elasticNetTime) = entrenarElasticNet(
+      trainOptimized, testOptimized
+    )
+    imprimirMetricas("Elastic Net", elasticNetMetrics, elasticNetTime)
+    guardarPredicciones(
+      elasticNetModel, 
+      testOptimized, 
+      "ml-prediction/resultados/with_data_leakage_elasticnet_predictions.txt"
+    )
+    
+    println("\nPASO 11: Entrenando Factorization Machines...")
+    val (fmModel, fmMetrics, fmTime) = entrenarFM(
+      trainOptimized, testOptimized
+    )
+    imprimirMetricas("Factorization Machines", fmMetrics, fmTime)
+    guardarPredicciones(
+      fmModel, 
+      testOptimized, 
+      "ml-prediction/resultados/with_data_leakage_fm_predictions.txt"
+    )
+    
+    println("\nPASO 12: Entrenando Isotonic Regression...")
+    val (isotonicModel, isotonicMetrics, isotonicTime) = entrenarIsotonic(
+      trainOptimized, testOptimized
+    )
+    imprimirMetricas("Isotonic Regression", isotonicMetrics, isotonicTime)
+    guardarPredicciones(
+      isotonicModel, 
+      testOptimized, 
+      "ml-prediction/resultados/with_data_leakage_isotonic_predictions.txt"
+    )
+    
+    println("\nPASO 13: Entrenando Generalized Linear Regression...")
+    val (glmModel, glmMetrics, glmTime) = entrenarGLM(
+      trainOptimized, testOptimized
+    )
+    imprimirMetricas("Generalized Linear Regression", glmMetrics, glmTime)
+    guardarPredicciones(
+      glmModel, 
+      testOptimized, 
+      "ml-prediction/resultados/with_data_leakage_glm_predictions.txt"
+    )
+    
+    println("\nPASO 14: Creando modelo Ensemble...")
     val ensembleMetrics = crearEnsemble(
       baselineModel, rfModel, gbtModel, testOptimized
     )
     imprimirMetricas("Ensemble (0.2*Ridge + 0.3*RF + 0.5*GBT)", ensembleMetrics, 0.0)
     
-    // ============================================================================
-    // REPORTE FINAL
-    // ============================================================================
-    println("\n📊 PASO 9: Generando reporte comparativo...")
+    println("\nPASO 15: Generando reporte comparativo...")
     generarReporteComparativo(
       Map(
         "Ridge Regression" -> (baselineMetrics, baselineTime),
         "Random Forest" -> (rfMetrics, rfTime),
         "Gradient Boosted Trees" -> (gbtMetrics, gbtTime),
+        "Decision Tree" -> (dtMetrics, dtTime),
+        "Lasso Regression" -> (lassoMetrics, lassoTime),
+        "Elastic Net" -> (elasticNetMetrics, elasticNetTime),
+        "Factorization Machines" -> (fmMetrics, fmTime),
+        "Isotonic Regression" -> (isotonicMetrics, isotonicTime),
+        "Generalized Linear Regression" -> (glmMetrics, glmTime),
         "Ensemble" -> (ensembleMetrics, 0.0)
       )
     )
@@ -130,7 +186,7 @@ object IMDBPredictionModelWithDataLeakage {
     testOptimized.unpersist()
     
     println("\n" + "=" * 80)
-    println("✅ PROCESO COMPLETADO - Resultados en resultados/")
+    println("PROCESO COMPLETADO - Resultados en resultados/")
     println("=" * 80)
     
     spark.stop()
@@ -154,7 +210,7 @@ object IMDBPredictionModelWithDataLeakage {
       .csv(ratingsPath)
     
     val joinedDF = movies.join(ratings, Seq("imdb_title_id"), "inner")
-    println(s"   ✓ Dataset completo: ${joinedDF.count()} filas")
+    println(s"   Dataset completo: ${joinedDF.count()} filas")
     
     joinedDF
   }
@@ -176,9 +232,9 @@ object IMDBPredictionModelWithDataLeakage {
     val cleanCount = cleanDF.count()
     val lossPercent = ((originalCount - cleanCount).toDouble / originalCount * 100)
     
-    println(s"   ✓ Filas originales: $originalCount")
-    println(s"   ✓ Filas limpias: $cleanCount")
-    println(f"   ✓ Pérdida: $lossPercent%.2f%%")
+    println(s"   Filas originales: $originalCount")
+    println(s"   Filas limpias: $cleanCount")
+    println(f"   Perdida: $lossPercent%.2f%%")
     
     cleanDF
   }
@@ -189,27 +245,23 @@ object IMDBPredictionModelWithDataLeakage {
     testRaw: DataFrame
   ): (DataFrame, DataFrame, Map[String, Map[String, Double]]) = {
     
-    // 1. Target Encoding para DIRECTOR (solo en train)
-    println("   🔧 Aplicando Target Encoding para director (SOLO TRAIN)...")
+    println("   Aplicando Target Encoding para director...")
     val (trainWithDirector, directorMap) = targetEncodeOnTrain(trainRaw, "director", "avg_vote")
     val testWithDirector = applyTargetEncoding(testRaw, "director", directorMap)
     
-    // 2. Target Encoding para ACTORS (solo en train)
-    println("   🔧 Aplicando Target Encoding para actors (SOLO TRAIN)...")
+    println("   Aplicando Target Encoding para actors...")
     val (trainWithActors, actorsMap) = targetEncodeOnTrain(trainWithDirector, "actors", "avg_vote")
     val testWithActors = applyTargetEncoding(testWithDirector, "actors", actorsMap)
     
-    // 3. Reducir cardinalidad de GENRE (basado solo en train)
-    println("   🔧 Reduciendo cardinalidad de genre (basado en TRAIN)...")
+    println("   Reduciendo cardinalidad de genre...")
     val (trainWithGenre, genreTopCategories) = reduceCardinalityOnTrain(trainWithActors, "genre", topN = 30)
     val testWithGenre = applyCardinalityReduction(testWithActors, "genre", genreTopCategories)
     
-    // 4. Features derivadas (sin leakage - solo usan la misma fila)
-    println("   🔧 Creando features derivadas...")
+    println("   Creando features derivadas...")
     val trainEnriched = crearFeaturesDerivadasSeguras(trainWithGenre)
     val testEnriched = crearFeaturesDerivadasSeguras(testWithGenre)
     
-    println("   ✓ Feature Engineering completado SIN data leakage")
+    println("   Feature Engineering completado")
     
     val encodingMaps = Map(
       "director" -> directorMap,
@@ -409,8 +461,6 @@ object IMDBPredictionModelWithDataLeakage {
   // ==========================================================================
   
   def entrenarModeloBaseline(trainData: DataFrame, testData: DataFrame): (PipelineModel, Map[String, Double], Double) = {
-    println("   ⏳ Entrenando Ridge Regression...")
-    
     val startTime = System.nanoTime()
     
     val lr = new LinearRegression()
@@ -434,10 +484,6 @@ object IMDBPredictionModelWithDataLeakage {
   }
   
   def entrenarRandomForest(trainData: DataFrame, testData: DataFrame): (PipelineModel, Map[String, Double], Double) = {
-    println("   ⏳ Entrenando Random Forest...")
-    println("   📊 Parámetros: 30 árboles, profundidad 8, minInstances 10")
-    println("   ⚠️  Reducido para evitar OutOfMemory")
-    
     val startTime = System.nanoTime()
     
     val rf = new RandomForestRegressor()
@@ -462,10 +508,6 @@ object IMDBPredictionModelWithDataLeakage {
   }
   
   def entrenarGBT(trainData: DataFrame, testData: DataFrame): (PipelineModel, Map[String, Double], Double) = {
-    println("   ⏳ Entrenando Gradient Boosted Trees...")
-    println("   📊 Parámetros: 50 iteraciones, profundidad 5, stepSize 0.1")
-    println("   ⚠️  Reducido para evitar OutOfMemory")
-    
     val startTime = System.nanoTime()
     
     val gbt = new GBTRegressor()
@@ -489,14 +531,153 @@ object IMDBPredictionModelWithDataLeakage {
     (model, metrics, elapsedTime)
   }
   
+  def entrenarDecisionTree(trainData: DataFrame, testData: DataFrame): (PipelineModel, Map[String, Double], Double) = {
+    val startTime = System.nanoTime()
+    
+    val dt = new DecisionTreeRegressor()
+      .setLabelCol("avg_vote")
+      .setFeaturesCol("scaled_features")
+      .setMaxDepth(10)
+      .setMinInstancesPerNode(20)
+      .setMinInfoGain(0.0)
+      .setSeed(42)
+    
+    val pipeline = crearPipeline(dt)
+    val model = pipeline.fit(trainData)
+    
+    val endTime = System.nanoTime()
+    val elapsedTime = (endTime - startTime) / 1e9
+    
+    val predictions = model.transform(testData)
+    val metrics = evaluarModelo(predictions)
+    
+    (model, metrics, elapsedTime)
+  }
+  
+  def entrenarLasso(trainData: DataFrame, testData: DataFrame): (PipelineModel, Map[String, Double], Double) = {
+    val startTime = System.nanoTime()
+    
+    val lasso = new LinearRegression()
+      .setLabelCol("avg_vote")
+      .setFeaturesCol("scaled_features")
+      .setMaxIter(100)
+      .setRegParam(0.1)
+      .setElasticNetParam(1.0)
+      .setTol(1e-6)
+    
+    val pipeline = crearPipeline(lasso)
+    val model = pipeline.fit(trainData)
+    
+    val endTime = System.nanoTime()
+    val elapsedTime = (endTime - startTime) / 1e9
+    
+    val predictions = model.transform(testData)
+    val metrics = evaluarModelo(predictions)
+    
+    (model, metrics, elapsedTime)
+  }
+  
+  def entrenarElasticNet(trainData: DataFrame, testData: DataFrame): (PipelineModel, Map[String, Double], Double) = {
+    val startTime = System.nanoTime()
+    
+    val elasticNet = new LinearRegression()
+      .setLabelCol("avg_vote")
+      .setFeaturesCol("scaled_features")
+      .setMaxIter(100)
+      .setRegParam(0.1)
+      .setElasticNetParam(0.5)
+      .setTol(1e-6)
+    
+    val pipeline = crearPipeline(elasticNet)
+    val model = pipeline.fit(trainData)
+    
+    val endTime = System.nanoTime()
+    val elapsedTime = (endTime - startTime) / 1e9
+    
+    val predictions = model.transform(testData)
+    val metrics = evaluarModelo(predictions)
+    
+    (model, metrics, elapsedTime)
+  }
+  
+  def entrenarFM(trainData: DataFrame, testData: DataFrame): (PipelineModel, Map[String, Double], Double) = {
+    val startTime = System.nanoTime()
+    
+    val fm = new FMRegressor()
+      .setLabelCol("avg_vote")
+      .setFeaturesCol("scaled_features")
+      .setFactorSize(8)
+      .setFitIntercept(true)
+      .setFitLinear(true)
+      .setRegParam(0.01)
+      .setMiniBatchFraction(0.8)
+      .setInitStd(0.01)
+      .setMaxIter(100)
+      .setStepSize(0.001)
+      .setSeed(42)
+    
+    val pipeline = crearPipeline(fm)
+    val model = pipeline.fit(trainData)
+    
+    val endTime = System.nanoTime()
+    val elapsedTime = (endTime - startTime) / 1e9
+    
+    val predictions = model.transform(testData)
+    val metrics = evaluarModelo(predictions)
+    
+    (model, metrics, elapsedTime)
+  }
+  
+  def entrenarIsotonic(trainData: DataFrame, testData: DataFrame): (PipelineModel, Map[String, Double], Double) = {
+    val startTime = System.nanoTime()
+    
+    val isotonic = new IsotonicRegression()
+      .setLabelCol("avg_vote")
+      .setFeaturesCol("scaled_features")
+      .setIsotonic(true)
+    
+    val pipeline = crearPipeline(isotonic)
+    val model = pipeline.fit(trainData)
+    
+    val endTime = System.nanoTime()
+    val elapsedTime = (endTime - startTime) / 1e9
+    
+    val predictions = model.transform(testData)
+    val metrics = evaluarModelo(predictions)
+    
+    (model, metrics, elapsedTime)
+  }
+  
+  def entrenarGLM(trainData: DataFrame, testData: DataFrame): (PipelineModel, Map[String, Double], Double) = {
+    val startTime = System.nanoTime()
+    
+    val glm = new GeneralizedLinearRegression()
+      .setLabelCol("avg_vote")
+      .setFeaturesCol("scaled_features")
+      .setFamily("gaussian")
+      .setLink("identity")
+      .setMaxIter(100)
+      .setRegParam(0.1)
+      .setTol(1e-6)
+    
+    val pipeline = crearPipeline(glm)
+    val model = pipeline.fit(trainData)
+    
+    val endTime = System.nanoTime()
+    val elapsedTime = (endTime - startTime) / 1e9
+    
+    val predictions = model.transform(testData)
+    val metrics = evaluarModelo(predictions)
+    
+    (model, metrics, elapsedTime)
+  }
+  
   def crearEnsemble(
     baselineModel: PipelineModel,
     rfModel: PipelineModel,
     gbtModel: PipelineModel,
     testData: DataFrame
   ): Map[String, Double] = {
-    
-    println("   ⏳ Generando predicciones de modelos individuales...")
     
     val baselinePred = baselineModel.transform(testData)
       .select(col("avg_vote"), col("prediction").alias("pred_baseline"))
@@ -517,11 +698,9 @@ object IMDBPredictionModelWithDataLeakage {
       col("pred_baseline") * 0.2 + col("pred_rf") * 0.3 + col("pred_gbt") * 0.5
     )
     
-    println("   ✓ Ensemble creado (0.2*Baseline + 0.3*RF + 0.5*GBT)")
-    
     guardarPredicciones(
       ensemble.select("avg_vote", "prediction"),
-      "resultados/with_data_leakage_ensemble_predictions.txt"
+      "ml-prediction/resultados/with_data_leakage_ensemble_predictions.txt"
     )
     
     evaluarModelo(ensemble)
@@ -545,7 +724,7 @@ object IMDBPredictionModelWithDataLeakage {
   }
   
   def imprimirMetricas(modelName: String, metrics: Map[String, Double], time: Double): Unit = {
-    println(s"\n   ✅ Métricas de $modelName:")
+    println(s"\n   Metricas de $modelName:")
     println(f"      RMSE: ${metrics("RMSE")}%.4f")
     println(f"      MAE:  ${metrics("MAE")}%.4f")
     println(f"      R²:   ${metrics("R2")}%.4f")
@@ -561,11 +740,13 @@ object IMDBPredictionModelWithDataLeakage {
         Some(rf.featureImportances)
       case gbt: org.apache.spark.ml.regression.GBTRegressionModel => 
         Some(gbt.featureImportances)
+      case dt: org.apache.spark.ml.regression.DecisionTreeRegressionModel => 
+        Some(dt.featureImportances)
       case _ => None
     }
     
     treeModel.foreach { importances =>
-      println(s"\n   📊 Feature Importances (Top 15):")
+      println(s"\n   Feature Importances (Top 15):")
       val topFeatures = importances.toArray.zipWithIndex
         .sortBy(-_._1)
         .take(15)
@@ -606,11 +787,11 @@ object IMDBPredictionModelWithDataLeakage {
     writer.println("=" * 80)
     writer.close()
     
-    println(s"   ✓ Predicciones guardadas en: $outputPath")
+    println(s"   Predicciones guardadas en: $outputPath")
   }
   
   def generarReporteComparativo(modelos: Map[String, (Map[String, Double], Double)]): Unit = {
-    val outputPath = "resultados/reporte_with_data_leakage.txt"
+    val outputPath = "ml-prediction/resultados/reporte_with_data_leakage.txt"
     val writer = new PrintWriter(outputPath)
     
     writer.println("=" * 80)
@@ -655,9 +836,9 @@ object IMDBPredictionModelWithDataLeakage {
     val mejorModelo = modelos.minBy(_._2._1("RMSE"))
     val baselineMetrics = modelos("Ridge Regression")._1
     
-    writer.println("ANÁLISIS:")
+    writer.println("ANALISIS:")
     writer.println("-" * 80)
-    writer.println(s"🏆 Mejor modelo: ${mejorModelo._1}")
+    writer.println(s"Mejor modelo: ${mejorModelo._1}")
     writer.println(f"   - RMSE: ${mejorModelo._2._1("RMSE")}%.4f")
     writer.println(f"   - R²: ${mejorModelo._2._1("R2")}%.4f")
     writer.println()
@@ -665,28 +846,28 @@ object IMDBPredictionModelWithDataLeakage {
     val mejoriaRMSE = ((baselineMetrics("RMSE") - mejorModelo._2._1("RMSE")) / baselineMetrics("RMSE") * 100)
     val mejoriaR2 = ((mejorModelo._2._1("R2") - baselineMetrics("R2")) / baselineMetrics("R2") * 100)
     
-    writer.println(s"📈 Mejora sobre baseline:")
+    writer.println(s"Mejora sobre baseline:")
     writer.println(f"   - RMSE: $mejoriaRMSE%.2f%% mejor")
     writer.println(f"   - R²: $mejoriaR2%.2f%% mejor")
     writer.println()
     
-    writer.println("TÉCNICAS APLICADAS:")
+    writer.println("TECNICAS APLICADAS:")
     writer.println("-" * 80)
-    writer.println("✅ Target Encoding (director, actors) - Evita alta cardinalidad")
-    writer.println("✅ Feature Hashing (genre) - Memoria controlada")
-    writer.println("✅ Feature Engineering - 11 features derivadas")
-    writer.println("✅ TF-IDF - Captura semántica del texto")
-    writer.println("✅ StandardScaler - Normalización de features")
-    writer.println("✅ Ensemble - Combina fortalezas de múltiples modelos")
+    writer.println("Target Encoding (director, actors) - Evita alta cardinalidad")
+    writer.println("Feature Hashing (genre) - Memoria controlada")
+    writer.println("Feature Engineering - 11 features derivadas")
+    writer.println("TF-IDF - Captura semantica del texto")
+    writer.println("StandardScaler - Normalizacion de features")
+    writer.println("Ensemble - Combina fortalezas de multiples modelos")
     writer.println()
     
     writer.println("=" * 80)
     writer.close()
     
-    println(s"   ✓ Reporte guardado en: $outputPath")
+    println(s"   Reporte guardado en: $outputPath")
     
     println("\n" + "=" * 80)
-    println("📊 RESUMEN FINAL")
+    println("RESUMEN FINAL")
     println("=" * 80)
     println(f"${"Modelo"}%-35s ${"RMSE"}%-10s ${"R²"}%-10s")
     println("-" * 80)
@@ -694,8 +875,8 @@ object IMDBPredictionModelWithDataLeakage {
       println(f"$nombre%-35s ${metricas("RMSE")}%-10.4f ${metricas("R2")}%-10.4f")
     }
     println("=" * 80)
-    println(s"🏆 Mejor modelo: ${mejorModelo._1}")
-    println(f"📈 Mejora sobre baseline: RMSE ${mejoriaRMSE}%.2f%% | R² ${mejoriaR2}%.2f%%")
+    println(s"Mejor modelo: ${mejorModelo._1}")
+    println(f"Mejora sobre baseline: RMSE ${mejoriaRMSE}%.2f%% | R² ${mejoriaR2}%.2f%%")
     println("=" * 80)
   }
 }
