@@ -114,14 +114,11 @@
 ### Outliers (Valores Mínimos y Máximos Extremos)
 
 - **duration**: Mínimo=41, Máximo=808.
-
 - **budget**: No se pudo calcular min/max (posibles NaN).
-
 - **worlwide_gross_income**: No se pudo calcular min/max (posibles NaN).
-
 - **votes**: Mínimo=99, Máximo=2,278,845.
 
-Gráfico guardado: `duration_boxplot.png`
+Gráfico: `duration_boxplot.png`
 
 ## 3. Estadísticas Descriptivas
 
@@ -137,12 +134,10 @@ Gráfico guardado: `duration_boxplot.png`
 
 ## 4. Análisis de la Variable Objetivo: avg_vote
 
-Gráfico guardado: `avg_vote_distribution.png`
+Gráfico: `avg_vote_distribution.png`
 
 - **Media del Rating:** 5.90
-
 - **Mediana del Rating:** 6.10
-
 - **Asimetría (Skewness):** -0.76
 
   -> El rating está **sesgado a la izquierda** (sesgo negativo).
@@ -155,11 +150,11 @@ Gráfico guardado: `avg_vote_distribution.png`
 
 ## 6. Distribuciones Importantes
 
-Gráfico guardado: `avg_vote_by_year.png`
+Gráfico: `avg_vote_by_year.png`
 
 ## 7. Análisis de Duración vs Rating
 
-Gráfico guardado: `duration_vs_rating_boxplot.png`
+Gráfico: `duration_vs_rating_boxplot.png`
 
 ### Rating Promedio por Categoría de Duración:
 
@@ -171,9 +166,3 @@ Gráfico guardado: `duration_vs_rating_boxplot.png`
 | 100-120min     | 6.176      |
 | <80min         | 5.722      |
 | 80-100min      | 5.601      |
-
-
---- **¡ANÁLISIS EXPLORATORIO DE DATOS (EDA) COMPLETADO!** ---
-
-
-**Revisa el archivo `EDA_Report.md` y los archivos PNG generados.**
