@@ -1,0 +1,61 @@
+================================================================================
+🎯 REPORTE - MODELO REAL (SIN TARGET ENCODING)
+================================================================================
+
+CAMBIOS RESPECTO AL MODELO ANTERIOR:
+--------------------------------------------------------------------------------
+❌ ELIMINADO: Target Encoding (director_encoded, actors_encoded)
+✅ AGREGADO:  Frequency Encoding (director_freq, actors_freq)
+
+RAZÓN DEL CAMBIO:
+  El modelo anterior tenía R² = 0.86 con:
+  - actors_encoded: 74% de feature importance
+  - director_encoded: 11% de feature importance
+  → Target Encoding creaba correlación casi perfecta con el target
+  → Era data leakage indirecto (usaba promedio del target)
+
+FEATURES UTILIZADAS:
+--------------------------------------------------------------------------------
+  • Description: TF-IDF (100 features)
+  • Genre: Feature Hashing (16 features)
+  • Director: Frequency Encoding (1 feature) ✅ SIN target
+  • Actors: Frequency Encoding (1 feature) ✅ SIN target
+  • Duration: Numérica + Categórica (2 features)
+  • Year: Numérica + Derivadas (4 features)
+  • TOTAL: ~124 features
+
+RESULTADOS:
+================================================================================
+Modelo                              RMSE       MAE        R²         Tiempo         
+--------------------------------------------------------------------------------
+Random Forest (Grid Search)         1.0697     0.8224     0.2459     89.61 min      
+================================================================================
+
+INTERPRETACIÓN:
+--------------------------------------------------------------------------------
+🏆 Mejor modelo: Random Forest (Grid Search)
+   - R²: 0.2459
+
+✅ R² REALISTA (< 0.4)
+   → Predice ratings usando SOLO características intrínsecas
+   → NO hay data leakage de ningún tipo
+   → Este es el verdadero poder predictivo del modelo
+
+================================================================================
+
+✨ Mejores hiperparámetros encontrados:
+      • numTrees: 150
+      • maxDepth: 15
+      • minInstancesPerNode: 10
+
+📊 Feature Importances (Top 10):
+      duration                 : 26.17%
+      year_clean               : 11.01%
+      genre[15]                : 6.70%
+      director_freq            : 6.66%
+      duration_indexed         : 5.57%
+      decade                   : 5.12%
+      genre[14]                : 4.68%
+      is_old_classic           : 3.40%
+      genre[0]                 : 0.71%
+      genre[7]                 : 0.64%
