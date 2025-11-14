@@ -114,11 +114,17 @@
 ### Outliers (Valores Mínimos y Máximos Extremos)
 
 - **duration**: Mínimo=41, Máximo=808.
+
 - **budget**: No se pudo calcular min/max (posibles NaN).
+
 - **worlwide_gross_income**: No se pudo calcular min/max (posibles NaN).
+
 - **votes**: Mínimo=99, Máximo=2,278,845.
 
-Gráfico: `duration_boxplot.png`
+Gráfico guardado: `duration_boxplot.png`
+
+**Visualización de Outliers en Duración:**
+![Box Plot de Duración](duration_boxplot.png)
 
 ## 3. Estadísticas Descriptivas
 
@@ -134,13 +140,18 @@ Gráfico: `duration_boxplot.png`
 
 ## 4. Análisis de la Variable Objetivo: avg_vote
 
-Gráfico: `avg_vote_distribution.png`
+Gráfico guardado: `avg_vote_distribution.png`
 
 - **Media del Rating:** 5.90
+
 - **Mediana del Rating:** 6.10
+
 - **Asimetría (Skewness):** -0.76
 
   -> El rating está **sesgado a la izquierda** (sesgo negativo).
+
+**Distribución de Ratings:**
+![Distribución de Ratings](avg_vote_distribution.png)
 
 ## 5. Correlación de Texto con Rating
 
@@ -150,19 +161,31 @@ Gráfico: `avg_vote_distribution.png`
 
 ## 6. Distribuciones Importantes
 
-Gráfico: `avg_vote_by_year.png`
+Gráfico guardado: `avg_vote_by_year.png`
+
+**Rating Promedio por Año:**
+![Rating Promedio por Año](avg_vote_by_year.png)
 
 ## 7. Análisis de Duración vs Rating
 
-Gráfico: `duration_vs_rating_boxplot.png`
+Gráfico guardado: `duration_vs_rating_boxplot.png`
+
+**Box Plot de Duración vs Rating:**
+![Duración vs Rating](duration_vs_rating_boxplot.png)
 
 ### Rating Promedio por Categoría de Duración:
 
 | duration_bin   | avg_vote   |
 |:---------------|:-----------|
-| >200min        | 7.006      |
+| **>200min** | **7.006** |
 | 150-200min     | 6.516      |
 | 120-150min     | 6.486      |
 | 100-120min     | 6.176      |
 | <80min         | 5.722      |
-| 80-100min      | 5.601      |
+| **80-100min** | **5.601** |
+
+
+--- **¡ANÁLISIS EXPLORATORIO DE DATOS (EDA) COMPLETADO!** ---
+
+
+**Revisa el archivo `eda-IMDb.md` y los archivos PNG generados.**
